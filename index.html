@@ -1,8 +1,3 @@
-Here is the updated script. I have integrated the 70 real-world style company names, the persistent market state (to stop the refresh glitch), and the News Ticker at the bottom.
-
-I adjusted the tick speed to 0.6 seconds—it's faster than the original but not as chaotic as the previous version, keeping it "snappy" without being overwhelming.
-
-HTML
 <!DOCTYPE html><html lang="en"><head>
     <meta charset="UTF-8">
     <title>QUANTUM APEX // SECURE_ACCESS</title>
@@ -14,12 +9,14 @@ HTML
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
         body { background: var(--bg); color: #c9d1d9; height: 100vh; overflow: hidden; font-size: 13px; }
 
+        /* AUTHENTICATION OVERLAY */
         .auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; justify-content: center; align-items: center; }
         .auth-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 30px; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
         .auth-tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
         .tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; color: #8b949e; transition: 0.3s; }
         .tab.active { color: var(--cyan); border-bottom: 2px solid var(--cyan); font-weight: bold; }
 
+        /* GAME INTERFACE */
         #mainHub { display: none; }
         .app { display: grid; grid-template-columns: 280px 1fr 300px; grid-template-rows: 60px 1fr 40px; height: 100vh; gap: 8px; padding: 8px; visibility: hidden; }
         .box { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; overflow: hidden; }
@@ -39,11 +36,6 @@ HTML
         .stat-big { font-size: 24px; font-weight: 600; }
         .mode-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; border-bottom: 2px solid transparent; color: #8b949e; font-weight: 600; }
         .active-tab { color: var(--cyan); border-bottom-color: var(--cyan); }
-
-        /* News Ticker Styling */
-        .news-wrap { white-space: nowrap; overflow: hidden; position: relative; background: #0d1117; border-top: 1px solid var(--border); padding: 5px 0; }
-        .news-text { display: inline-block; padding-left: 100%; animation: scroll-news 40s linear infinite; color: var(--gold); font-weight: bold; }
-        @keyframes scroll-news { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
     </style></head><body>
 
     <div id="authScreen" class="auth-overlay">
@@ -53,8 +45,8 @@ HTML
                 <div id="loginTab" class="tab active" onclick="setAuthMode('login')">LOGIN</div>
                 <div id="signupTab" class="tab" onclick="setAuthMode('signup')">SIGN UP</div>
             </div>
-            <input type="text" id="username" placeholder="Terminal ID">
-            <input type="password" id="password" placeholder="Access Key">
+            <input type="text" id="username" placeholder="Terminal ID (Username)">
+            <input type="password" id="password" placeholder="Access Key (Password)">
             <button id="authBtn" class="btn btn-primary" onclick="handleAuth()">INITIALIZE SESSION</button>
             <p id="authError" style="color:var(--red); font-size:11px; margin-top:10px; text-align:center;"></p>
         </div>
@@ -99,6 +91,7 @@ HTML
             
             <button class="btn btn-buy" onclick="trade(1)">Buy</button>
             <button class="btn btn-sell" onclick="trade(-1)">Sell</button>
+
             <input type="number" id="tradeQty" placeholder="Order Amount" min="1" value="1" style="margin-top: 10px;">
             
             <div style="margin-top: auto;">
@@ -107,27 +100,18 @@ HTML
             </div>
         </aside>
 
-        <footer class="box" style="grid-column: span 3; padding:0; height: 40px; overflow: hidden;">
-            <div class="news-wrap"><div id="news" class="news-text">INITIALIZING QUANTUM DATA FEED... MARKET OPEN... WATCH FOR VOLATILITY...</div></div>
+        <footer class="box" style="grid-column: span 3; flex-direction: row; border: none; background: transparent; justify-content: space-between; color: #484f58; font-size: 11px;">
+            <div id="status">System Online</div>
+            <div id="clock">00:00:00</div>
         </footer>
     </div>
 
     <script>
         let currentAuthMode = 'login';
         let currentUser = null;
-        const Game = { cash: 100000, port: {}, mode: 'day', active: null };
+        const Game = { cash: 10000, port: {}, mode: 'day', active: null };
         const Stocks = [];
         const cvs = document.getElementById('chart'), ctx = cvs.getContext('2d');
-
-        const companyNames = [
-            "Aetheris Tech", "Bitcoin Core", "Ethereum Net", "Solaris Energy", "Nebula Systems", "Titan Heavy", "Apex Genomics", "Vertex AI", "Cyberdyne", "Globex Corp",
-            "Umbrella Pharma", "Soylent Corp", "Wayne Tech", "Stark Ind", "Oscorp", "Black Mesa", "Aperture Sci", "Abstergo", "Shinra Electric", "Vault-Tec",
-            "Ouroboros Bio", "Zenith Soft", "Prisma Cloud", "Kuro Dynamics", "Neo Tokyo Rail", "Icarus Flight", "Mars Colonization", "Lunar Mining", "Aqua Logic", "NanoGrid",
-            "Void Logistics", "Pulse Telecom", "Echo Robotics", "Iron Mountain", "Silicon Soul", "Atlas Defense", "Oasis VR", "Vector Aero", "Horizon Zero", "Gaea Terra",
-            "Cortex Neural", "Omni Consumer", "Weyland-Yutani", "Tyrell Biotech", "Wallace Corp", "Massive Dynamic", "Fringe Sci", "Blue Sun", "Veridian Dyn", "Initech",
-            "Hooli Corp", "Pied Piper", "Raviga Cap", "Dunder Mifflin", "Vandelay Ind", "Prestige World", "Genco Pura", "Madrigal Elect", "Sterling Cooper", "E-Corp",
-            "Allsafe Cyber", "Dark Army", "Steel Mountain", "Fun Society", "Evil Corp", "Massive Net", "Hyperion", "RobCo Ind", "Militaires Sans Frontieres", "UAC Mars"
-        ];
 
         function setAuthMode(m) {
             currentAuthMode = m;
@@ -144,39 +128,19 @@ HTML
             let registry = JSON.parse(localStorage.getItem('QA_REGISTRY') || '{}');
             if(currentAuthMode === 'signup') {
                 if(registry[u]) { err.innerText = "Error: ID already exists."; return; }
-                registry[u] = { password: p, cash: 100000, port: {}, marketState: null };
+                registry[u] = { password: p, cash: 10000, port: {} };
                 localStorage.setItem('QA_REGISTRY', JSON.stringify(registry));
                 err.style.color = "var(--green)";
-                err.innerText = "Identity Created.";
+                err.innerText = "Identity Created. Switch to Login.";
             } else {
-                if(!registry[u] || registry[u].password !== p) { err.innerText = "Error: Invalid ID."; return; }
+                if(!registry[u] || registry[u].password !== p) { err.innerText = "Error: Invalid ID or Key."; return; }
                 currentUser = u;
                 Game.cash = registry[u].cash;
                 Game.port = registry[u].port;
-                generateMarket(registry[u].marketState);
                 document.getElementById('authScreen').style.display = 'none';
                 document.getElementById('mainHub').style.display = 'flex';
                 document.getElementById('hubUser').innerText = "@" + u;
-            }
-        }
-
-        function generateMarket(saved) {
-            Stocks.length = 0;
-            const list = document.getElementById('stockList');
-            list.innerHTML = "";
-
-            for(let i=0; i<70; i++) {
-                let s;
-                if(saved && saved[i]) {
-                    s = saved[i];
-                } else {
-                    let start = 100 + Math.random() * 500;
-                    if(i < 5) start = 50000 + Math.random() * 50000; // Giants
-                    if(i > 60) start = 0.50 + Math.random() * 5; // Pennies
-                    s = { name: companyNames[i], sym: companyNames[i].substring(0,3).toUpperCase() + (100+i), price: start, vol: 0.02, hist: [] };
-                }
-                Stocks.push(s);
-                list.innerHTML += `<div class="ticker" id="tk-${s.sym}" onclick="viewStock('${s.sym}')"><span><b>${s.sym}</b></span><span id="p-${s.sym}">$0.00</span></div>`;
+                generateMarket();
             }
         }
 
@@ -184,27 +148,65 @@ HTML
             document.getElementById('mainHub').style.display = 'none';
             document.getElementById('app').style.visibility = 'visible';
             viewStock(Stocks[0].sym);
-            setInterval(tick, 600); // 0.6s TICK SPEED
-            setInterval(updateNews, 8000);
+            setInterval(tick, 1000);
             resize();
         }
 
-        function updateNews() {
-            const s = Stocks[Math.floor(Math.random()*Stocks.length)];
-            const msgs = ["EARNINGS REPORT EXPECTED", "CEO STEPPING DOWN", "NEW PRODUCT LEAKED", "REGULATORY INVESTIGATION", "TRADING HALT POSSIBLE"];
-            document.getElementById('news').innerText = `[REPORT] ${s.name} (${s.sym}): ${msgs[Math.floor(Math.random()*msgs.length)]}... `;
-        }
+        function generateMarket() {
+            // HARDCODED LIST: Names and Symbols will never change on refresh
+            const fixedAssets = [
+                {n:"Bitcoin", s:"BTC", p:64200}, {n:"Ethereum", s:"ETH", p:3450}, {n:"Apple Inc.", s:"AAPL", p:192},
+                {n:"Tesla Corp", s:"TSLA", p:175}, {n:"Nvidia AI", s:"NVDA", p:880}, {n:"Microsoft", s:"MSFT", p:420},
+                {n:"Amazon Web", s:"AMZN", p:180}, {n:"Google Alphabet", s:"GOOGL", p:155}, {n:"Meta Systems", s:"META", p:490},
+                {n:"Netflix Media", s:"NFLX", p:610}, {n:"AMD Tech", s:"AMD", p:170}, {n:"Intel Foundry", s:"INTC", p:35},
+                {n:"Sony Global", s:"SONY", p:85}, {n:"Samsung Elec", s:"SMSN", p:1100}, {n:"Toyota Motor", s:"TM", p:230},
+                {n:"Ford Mobility", s:"F", p:12}, {n:"Disney Ent", s:"DIS", p:115}, {n:"Nike Sports", s:"NKE", p:95},
+                {n:"Starbucks Co", s:"SBUX", p:88}, {n:"Coca-Cola", s:"KO", p:60}, {n:"PepsiCo", s:"PEP", p:170},
+                {n:"Visa Financial", s:"V", p:280}, {n:"Mastercard", s:"MA", p:470}, {n:"JPMorgan Chase", s:"JPM", p:195},
+                {n:"Goldman Sachs", s:"GS", p:410}, {n:"Boeing Aero", s:"BA", p:180}, {n:"Lockheed Martin", s:"LMT", p:450},
+                {n:"Palantir Tech", s:"PLTR", p:24}, {n:"Snowflake Cloud", s:"SNOW", p:160}, {n:"Coinbase Glbl", s:"COIN", p:250},
+                {n:"Spotify Music", s:"SPOT", p:300}, {n:"Uber Tech", s:"UBER", p:75}, {n:"Airbnb Inc", s:"ABNB", p:160},
+                {n:"Roblox Corp", s:"RBLX", p:38}, {n:"Unity Software", s:"U", p:26}, {n:"Adobe Design", s:"ADBE", p:520},
+                {n:"Oracle Database", s:"ORCL", p:125}, {n:"Salesforce", s:"CRM", p:300}, {n:"SpaceX Star", s:"SPCX", p:250},
+                {n:"Blue Origin", s:"BLUE", p:140}, {n:"Virgin Galactic", s:"SPCE", p:2}, {n:"Rivian Auto", s:"RIVN", p:10},
+                {n:"Lucid Motors", s:"LCID", p:3}, {n:"Pfizer Bio", s:"PFE", p:27}, {n:"Moderna RNA", s:"MRNA", p:110},
+                {n:"Johnson & J", s:"JNJ", p:155}, {n:"Walmart Retail", s:"WMT", p:60}, {n:"Costco Whsle", s:"COST", p:730},
+                {n:"McDonald's", s:"MCD", p:285}, {n:"Exxon Mobil", s:"XOM", p:120}, {n:"Chevron Energy", s:"CVX", p:160},
+                {n:"Shell Power", s:"SHEL", p:70}, {n:"Dogecoin", s:"DOGE", p:0.16}, {n:"Solana Net", s:"SOL", p:145},
+                {n:"Cardano Block", s:"ADA", p:0.50}, {n:"Polygon Mat", s:"MATIC", p:0.90}, {n:"Litecoin", s:"LTC", p:85},
+                {n:"XRP Ledger", s:"XRP", p:0.60}, {n:"Polkadot", s:"DOT", p:9}, {n:"Chainlink", s:"LINK", p:18},
+                {n:"Terraform", s:"LUNA", p:0.01}, {n:"Cosmos Hub", s:"ATOM", p:11}, {n:"Algorand", s:"ALGO", p:0.25},
+                {n:"Stellar Lum", s:"XLM", p:0.12}, {n:"Monero Priv", s:"XMR", p:130}, {n:"Ferrari NV", s:"RACE", p:400},
+                {n:"Lamborghini G", s:"LAMB", p:320}, {n:"Rolls-Royce", s:"RYCE", p:5}, {n:"General Motors", s:"GM", p:45},
+                {n:"Square Block", s:"SQ", p:80}, {n:"PayPal Hold", s:"PYPL", p:65}, {n:"Zoom Video", s:"ZM", p:65},
+                {n:"DraftKings", s:"DKNG", p:45}, {n:"Roku Media", s:"ROKU", p:60}, {n:"Shopify Com", s:"SHOP", p:75},
+                {n:"Twilio Comm", s:"TWLO", p:60}, {n:"Snapchat", s:"SNAP", p:11}, {n:"Pinterest", s:"PINS", p:35},
+                {n:"Etsy Market", s:"ETSY", p:70}, {n:"DoorDash", s:"DASH", p:135}, {n:"Instacart", s:"CART", p:35},
+                {n:"Reddit Inc", s:"RDDT", p:50}, {n:"Discord Private", s:"DSCD", p:85}, {n:"OpenAI Research", s:"OPEN", p:1000},
+                {n:"Anthropic AI", s:"ANTH", p:600}, {n:"Mistral AI", s:"MIST", p:300}, {n:"Neuralink", s:"LINK", p:500},
+                {n:"ASML Litho", s:"ASML", p:950}, {n:"TSMC Foundry", s:"TSM", p:145}, {n:"Arm Holdings", s:"ARM", p:125},
+                {n:"IBM Computing", s:"IBM", p:190}, {n:"Cisco Systems", s:"CSCO", p:50}, {n:"Broadcom Inc", s:"AVGO", p:1300},
+                {n:"Dell Tech", s:"DELL", p:110}, {n:"HP Enterprise", s:"HPE", p:18}, {n:"BlackRock", s:"BLK", p:800},
+                {n:"Berkshire Ath", s:"BRK", p:620000}, {n:"Morgan Stanley", s:"MS", p:90}, {n:"American Exp", s:"AXP", p:220},
+                {n:"FedEx Express", s:"FDX", p:260}, {n:"UPS Logistics", s:"UPS", p:150}
+            ];
 
-        function tick() {
-            Stocks.forEach(s => {
-                let open = s.price;
-                s.price += s.price * (Math.random() - 0.5) * s.vol;
-                if(s.price < 0.05) s.price = 0.05;
-                s.hist.push({o: open, c: s.price, h: Math.max(open, s.price)+1, l: Math.min(open, s.price)-1});
-                if(s.hist.length > 50) s.hist.shift();
-                document.getElementById(`p-${s.sym}`).innerText = `$${s.price.toFixed(2)}`;
+            fixedAssets.forEach(data => {
+                Stocks.push({ 
+                    name: data.n, 
+                    sym: data.s, 
+                    price: data.p, 
+                    vol: 0.02, 
+                    hist: [] 
+                });
             });
-            draw(); updateUI();
+
+            const list = document.getElementById('stockList');
+            Stocks.forEach(x => {
+                list.innerHTML += `<div class="ticker" id="tk-${x.sym}" onclick="viewStock('${x.sym}')">
+                    <span><b>${x.sym}</b></span><span id="p-${x.sym}">$0.00</span>
+                </div>`;
+            });
         }
 
         function viewStock(sym) {
@@ -220,46 +222,83 @@ HTML
             document.getElementById('tabInv').className = m==='inv'?'mode-tab active-tab':'mode-tab';
         }
 
+        function tick() {
+            Stocks.forEach(s => {
+                let open = s.price;
+                s.price += s.price * (Math.random() - 0.5) * s.vol;
+                if(s.price < 0.01) s.price = 0.01;
+                s.hist.push({o: open, c: s.price, h: Math.max(open, s.price)+2, l: Math.min(open, s.price)-2});
+                if(s.hist.length > 50) s.hist.shift();
+                document.getElementById(`p-${s.sym}`).innerText = `$${s.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            });
+            draw(); updateUI();
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+        }
+
         function draw() {
             ctx.clearRect(0,0,cvs.width,cvs.height);
             const h = Game.active.hist; if(h.length < 2) return;
-            const min = Math.min(...h.map(x=>x.l)), max = Math.max(...h.map(x=>x.h)), range = max-min;
+            const min = Math.min(...h.map(x=>x.l))*0.99, max = Math.max(...h.map(x=>x.h))*1.01, range = max-min;
             const w = cvs.width / 50;
             h.forEach((d, i) => {
                 const x = i * w + (w/2);
                 const yO = cvs.height - ((d.o-min)/range * cvs.height);
                 const yC = cvs.height - ((d.c-min)/range * cvs.height);
-                ctx.fillStyle = d.c >= d.o ? '#3fb950' : '#f85149';
-                ctx.fillRect(i*w+2, Math.min(yO, yC), w-4, Math.max(Math.abs(yO-yC), 1));
+                const yH = cvs.height - ((d.h-min)/range * cvs.height);
+                const yL = cvs.height - ((d.l-min)/range * cvs.height);
+                const color = d.c >= d.o ? '#3fb950' : '#f85149';
+                if(Game.mode === 'day') {
+                    ctx.strokeStyle = color; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(x, yH); ctx.lineTo(x, yL); ctx.stroke();
+                    ctx.fillStyle = color; ctx.fillRect(i*w + 4, Math.min(yO, yC), w-8, Math.max(Math.abs(yO-yC), 1));
+                } else {
+                    ctx.strokeStyle = '#58a6ff'; ctx.lineWidth = 2;
+                    if(i>0) {
+                        let prevY = cvs.height - ((h[i-1].c-min)/range * cvs.height);
+                        ctx.beginPath(); ctx.moveTo((i-1)*w + (w/2), prevY); ctx.lineTo(x, yC); ctx.stroke();
+                    }
+                }
             });
         }
 
         function trade(dir) {
             const s = Game.active;
             const input = document.getElementById('tradeQty');
-            let qty = parseInt(input.value);
-            if(isNaN(qty) || qty <= 0) return;
+            let requestedQty = parseInt(input.value);
+
+            if(isNaN(requestedQty) || requestedQty <= 0) return;
             if(!Game.port[s.sym]) Game.port[s.sym] = { qty: 0, avg: 0 };
             const p = Game.port[s.sym];
 
-            if(dir === 1) {
-                const max = Math.floor(Game.cash / s.price);
-                if(qty > max) { qty = max; input.value = qty; }
-                if(qty > 0) {
-                    Game.cash -= s.price * qty;
-                    p.avg = (p.qty*p.avg + s.price*qty) / (p.qty + qty);
-                    p.qty += qty;
+            if(dir === 1) { 
+                const maxAffordable = Math.floor(Game.cash / s.price);
+                if(requestedQty > maxAffordable) {
+                    requestedQty = maxAffordable;
+                    input.value = requestedQty;
                 }
-            } else {
-                if(qty > p.qty) { qty = p.qty; input.value = qty; }
-                if(qty > 0) { Game.cash += s.price * qty; p.qty -= qty; }
+                if(requestedQty > 0) {
+                    const totalCost = s.price * requestedQty;
+                    Game.cash -= totalCost;
+                    p.avg = (p.qty*p.avg + totalCost) / (p.qty + requestedQty);
+                    p.qty += requestedQty;
+                }
+            } else if(dir === -1) {
+                if(requestedQty > p.qty) {
+                    requestedQty = p.qty;
+                    input.value = requestedQty;
+                }
+                if(requestedQty > 0) {
+                    Game.cash += s.price * requestedQty;
+                    p.qty -= requestedQty;
+                }
             }
-            saveGame(); updateUI();
+            saveGame();
+            updateUI();
         }
 
         function updateUI() {
             document.getElementById('cashDisp').innerText = `$${Math.floor(Game.cash).toLocaleString()}`;
-            document.getElementById('sPrice').innerText = `$${Game.active.price.toFixed(2)}`;
+            document.getElementById('sPrice').innerText = `$${Game.active.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             const p = Game.port[Game.active.sym];
             if(p && p.qty > 0) {
                 const diff = (Game.active.price - p.avg) * p.qty;
@@ -268,17 +307,18 @@ HTML
                 document.getElementById('qtyDisp').innerText = `Units: ${p.qty} | Avg: $${p.avg.toFixed(2)}`;
             } else {
                 document.getElementById('pnlDisp').innerText = "$0.00";
+                document.getElementById('pnlDisp').style.color = "#8b949e";
                 document.getElementById('qtyDisp').innerText = "Units: 0";
             }
         }
 
         function saveGame(manual) {
             let registry = JSON.parse(localStorage.getItem('QA_REGISTRY'));
+            if(!registry || !currentUser) return;
             registry[currentUser].cash = Game.cash;
             registry[currentUser].port = Game.port;
-            registry[currentUser].marketState = Stocks;
             localStorage.setItem('QA_REGISTRY', JSON.stringify(registry));
-            if(manual) alert("Sync Complete.");
+            if(manual) alert("Terminal Data Synced.");
         }
 
         function resize() { cvs.width = cvs.offsetWidth; cvs.height = cvs.offsetHeight; }
