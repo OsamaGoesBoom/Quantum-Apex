@@ -48,8 +48,6 @@
             <input type="text" id="username" placeholder="Terminal ID (Username)">
             <input type="password" id="password" placeholder="Access Key (Password)">
             <button id="authBtn" class="btn btn-primary" onclick="handleAuth()">INITIALIZE SESSION</button>
-            <hr style="border:0; border-top:1px solid var(--border); margin:15px 0;">
-            <button class="btn" style="font-size:10px;" onclick="importData()">IMPORT CLOUD SYNC STRING</button>
             <p id="authError" style="color:var(--red); font-size:11px; margin-top:10px; text-align:center;"></p>
         </div>
     </div>
@@ -97,7 +95,6 @@
             <input type="number" id="tradeQty" placeholder="Order Amount" min="1" value="1" style="margin-top: 10px;">
             
             <div style="margin-top: auto;">
-                <button class="btn" style="color:var(--cyan)" onclick="exportData()">Copy Sync String</button>
                 <button class="btn" onclick="saveGame(true)">Manual Sync</button>
                 <button class="btn" onclick="location.reload()">Log Out</button>
             </div>
@@ -122,28 +119,6 @@
             document.getElementById('signupTab').classList.toggle('active', m==='signup');
             document.getElementById('authBtn').innerText = m==='login' ? 'INITIALIZE SESSION' : 'CREATE IDENTITY';
         }
-
-        // --- NEW SYNC SYSTEM ---
-        function exportData() {
-            let registry = JSON.parse(localStorage.getItem('QA_REGISTRY') || '{}');
-            let dataStr = btoa(JSON.stringify(registry)); // Encode to Base64
-            navigator.clipboard.writeText(dataStr);
-            alert("Account Sync String copied to clipboard! Send this to your friend or your other device.");
-        }
-
-        function importData() {
-            let str = prompt("Paste your Sync String here:");
-            if(str) {
-                try {
-                    let decoded = atob(str);
-                    localStorage.setItem('QA_REGISTRY', decoded);
-                    alert("Identity Database Synced! You can now log in.");
-                } catch(e) {
-                    alert("Invalid Sync String.");
-                }
-            }
-        }
-        // -----------------------
 
         function handleAuth() {
             const u = document.getElementById('username').value.trim();
@@ -178,6 +153,7 @@
         }
 
         function generateMarket() {
+            // HARDCODED LIST: Names and Symbols will never change on refresh
             const fixedAssets = [
                 {n:"Bitcoin", s:"BTC", p:64200}, {n:"Ethereum", s:"ETH", p:3450}, {n:"Apple Inc.", s:"AAPL", p:192},
                 {n:"Tesla Corp", s:"TSLA", p:175}, {n:"Nvidia AI", s:"NVDA", p:880}, {n:"Microsoft", s:"MSFT", p:420},
@@ -216,7 +192,13 @@
             ];
 
             fixedAssets.forEach(data => {
-                Stocks.push({ name: data.n, sym: data.s, price: data.p, vol: 0.02, hist: [] });
+                Stocks.push({ 
+                    name: data.n, 
+                    sym: data.s, 
+                    price: data.p, 
+                    vol: 0.02, 
+                    hist: [] 
+                });
             });
 
             const list = document.getElementById('stockList');
